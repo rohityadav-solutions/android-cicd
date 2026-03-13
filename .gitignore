@@ -1,0 +1,406 @@
+# -----------------------------------------------
+# Understanding "/" (forward slash) in .gitignore
+#
+# "/" at the START of a rule — controls WHERE
+# The rule applies only at the project root level.
+#
+# Example: /build/
+# android-cicd/build/        ← ignored ✅
+# android-cicd/app/build/    ← NOT ignored ❌
+#
+# "/" at the END of a rule — controls WHAT
+# The rule applies only to directories, not files.
+#
+# Example: build/
+# android-cicd/build/        ← ignored ✅ (folder)
+# android-cicd/app/build/    ← ignored ✅ (folder)
+# android-cicd/build         ← NOT ignored ❌ (file)
+#
+# No "/" at START or END — matches both files and folders
+# The rule applies everywhere in the project.
+#
+# Example: build
+# android-cicd/build/        ← ignored ✅ (folder)
+# android-cicd/app/build/    ← ignored ✅ (folder)
+# android-cicd/build         ← ignored ✅ (file)
+#
+# Quick Summary of build ignore rules
+#
+# Rule      | What it ignores
+# ----------|------------------------------------
+# /build/   | Only the root build folder
+# build/    | Any build folder anywhere
+# build     | Files or folders named "build" anywhere
+# -----------------------------------------------
+
+# -----------------------------------------------
+# Built Application Files
+#
+# What is * (wildcard)?
+# * means "match anything" — it does not matter what
+# the file is named — if it ends with the extension
+# it will be ignored
+#
+# *.apk — Android Package Kit file
+#          This is the actual installable app file
+#          that gets installed on Android devices
+#          example: app-release.apk, app-debug.apk
+#
+# *.aab — Android App Bundle file
+#          This is the file you upload to Google Play Console
+#          Google Play uses this to generate optimized APKs
+#          for each device automatically
+#          example: app-release.aab, app-debug.aab
+#
+# *.dex — Dalvik Executable file
+#          This is the compiled bytecode of your
+#          Kotlin/Java code that runs on Android devices
+#          example: classes.dex, classes2.dex
+#
+# When are these files generated?
+#
+# Situation 1 — When you click Run in Android Studio
+#          Android Studio automatically compiles your
+#          code and generates all these files every
+#          time you click the Run button
+#
+# Situation 2 — When you build manually via Build menu
+#          Build → Assemble 'app' Run Configuration
+#               generates debug APK for current
+#               run configuration
+#          Build → Compile Selected Modules
+#               compiles only the selected module
+#               generates .class and .dex files
+#          Build → Compile All Sources
+#               compiles all source files in project
+#               generates .class and .dex files
+#          Build → Assemble Selected Modules
+#               generates APK for selected modules only
+#          Build → Assemble Project
+#               generates APK for entire project
+#               output in app/build/outputs/apk/
+#          Build → Generate App Bundles or APKs
+#               generates either .aab or .apk file
+#               output in app/build/outputs/bundle/
+#               or app/build/outputs/apk/
+#          Build → Generate Signed App Bundle or APK
+#               generates signed .aab or .apk file
+#               signed with your keystore credentials
+#               output in app/release/
+#
+# Situation 3 — When GitHub Actions runs your CI/CD workflow
+#          GitHub Actions runs ./gradlew bundleRelease
+#          and generates .class, .dex and .aab files
+#          at app/build/outputs/bundle/release/app-release.aab
+#          on the GitHub Actions machine — not on your computer
+#
+# Why ignore all of these?
+# All of these files are generated automatically
+# every time you run or build your app — they are
+# output files not source files. Any developer can
+# regenerate them instantly just by clicking Run
+# in Android Studio or by running ./gradlew build
+# Pushing them only wastes storage space and causes
+# unnecessary conflicts between different machines
+# -----------------------------------------------
+*.apk
+*.aab
+*.dex
+
+# -----------------------------------------------
+# Java / Kotlin Class Files
+#
+# *.class — Compiled Java or Kotlin bytecode file
+#            When you write code in Kotlin or Java
+#            the compiler converts it into .class files
+#            which the JVM can understand and execute
+#            In your project these would be generated
+#            inside app/build/intermediates/ and
+#            app/build/kotlin/ folders
+#            example: MainActivity.class
+#
+# Why ignore these?
+# These are intermediate compiled files generated
+# automatically during every build — they are not
+# your source code. Your actual source code lives in
+# app/src/main/java/com/arbutusinfotech/upkeep/
+# Any developer can regenerate .class files by
+# building the project
+# -----------------------------------------------
+*.class
+
+# -----------------------------------------------
+# Generated Build Directories
+#
+# build/ — Gradle creates a build/ folder inside
+#           every module automatically during build
+#           Git treats this rule as recursive so
+#           one rule covers all of these:
+#           build/         — root level
+#           app/build/     — app module
+#           library/build/ — library module
+#           any other module build/ folder
+#
+# When is this created?
+#           Every time you click Run in Android Studio
+#           Every time you go to Build → Assemble Project
+#           Every time GitHub Actions runs ./gradlew bundleRelease
+#           Gradle recreates it fresh every single time
+#
+# Why ignore this?
+#           Auto generated on every build
+#           Can be hundreds of MB in size
+#           Machine specific output files
+#           Any developer can regenerate instantly
+#           by clicking Run in Android Studio
+# -----------------------------------------------
+build/
+
+# -----------------------------------------------
+# Gradle Cache
+#
+# .gradle/ — Gradle stores downloaded dependencies
+#             and build metadata in this directory
+#             to speed up future builds
+#             This folder is machine specific and
+#             contains cached files and local paths
+#             that are only relevant to the current
+#             development environment
+#
+# What about gradle/wrapper/ files?
+# The gradle/wrapper/ directory is different from
+# .gradle/ and should NOT be ignored. Git already
+# tracks these files automatically:
+#   gradle/wrapper/gradle-wrapper.jar
+#   gradle/wrapper/gradle-wrapper.properties
+#   gradlew
+#   gradlew.bat
+# These files allow developers and CI systems
+# such as GitHub Actions to run Gradle without
+# installing it manually — they must remain in Git
+#
+# .gradle-cache/ — sometimes appears in CI environments
+#                   like GitHub Actions when Gradle
+#                   caches dependencies between runs
+#                   Machine specific — ignore this too
+#
+# Why ignore .gradle/?
+# It is an auto generated Gradle cache that:
+# — is specific to each machine
+# — changes frequently during development
+# — is recreated automatically when the project builds
+# -----------------------------------------------
+.gradle/
+.gradle-cache/
+
+# -----------------------------------------------
+# Local Configuration File
+#
+# local.properties — automatically created by
+#                     Android Studio and contains:
+#                     sdk.dir=/Users/manishjain/Library/Android/sdk
+#                     This path only works on the
+#                     machine where it was created
+#                     On your machine the path starts
+#                     with /Users/manishjain/ — on
+#                     any other machine this path
+#                     does not exist and will cause
+#                     Android Studio to show errors
+#
+# Why ignore this?
+# Android Studio recreates this file automatically
+# for each developer with their own correct SDK path
+# There is never any reason to push this file
+# -----------------------------------------------
+local.properties
+
+# -----------------------------------------------
+# Keystore Folder and Signing Files
+#
+# Your project has a keystore/ folder at the root
+# level containing two files:
+#
+# keystore/upkeep_keystore.jks — your actual keystore
+#                                  file containing your
+#                                  app signing credentials
+#                                  NEVER push this file
+#
+# keystore/keystore.properties — contains your keystore
+#                                  passwords in plain text
+#                                  including store password
+#                                  key alias and key password
+#                                  NEVER push this file
+#
+# keystore/ — ignoring the entire folder automatically
+#              covers both files inside it
+#              No need to list them separately
+#
+# *.jks — safety net rule
+#          If someone accidentally places a .jks file
+#          outside the keystore/ folder — for example
+#          directly in the project root or in app/ —
+#          this rule will still catch and ignore it
+#
+# Why is this critical?
+# upkeep_keystore.jks contains your app signing
+# credentials. If pushed to a public repository
+# anyone can download and misuse it to sign fake
+# versions of your app. keystore.properties contains
+# your passwords in plain text — equally dangerous.
+# These credentials should be stored securely
+# for example using CI/CD secrets such as
+# GitHub Secrets — covered in Step 4
+# -----------------------------------------------
+keystore/
+*.jks
+
+# -----------------------------------------------
+# Android Studio and IntelliJ Settings
+#
+# .idea/ — Located at the root level of the project
+#           Android Studio stores project configuration
+#           here including editor preferences
+#           run configurations, code style settings
+#           and debugger settings
+#           These files change frequently during normal
+#           development — opening files, changing settings
+#           so they should not be tracked in Git
+#           Ignoring the entire .idea/ folder
+#           automatically covers everything inside it
+#           No need to list individual files or
+#           subfolders separately
+#
+# *.iml — IntelliJ Module files
+#          Automatically regenerated by Android Studio
+#          when the project is opened
+#          example: android-cicd.iml, app.iml
+#
+# Why ignore these?
+# These files are specific to each developer's
+# machine and Android Studio installation
+# Android Studio automatically recreates the
+# correct configuration when the project is opened
+# -----------------------------------------------
+*.iml
+.idea/
+
+# -----------------------------------------------
+# Kotlin Cache
+#
+# .kotlin/ — created by the Kotlin compiler to
+#             store incremental compilation cache
+#             This speeds up future builds by only
+#             recompiling files that have changed
+#             Completely machine specific — has no
+#             value on any other machine
+#             Already visible in your project structure
+#
+# Why ignore this?
+# Auto generated by Kotlin compiler on every build
+# Machine specific — changes constantly
+# -----------------------------------------------
+.kotlin/
+
+# -----------------------------------------------
+# External Native Build
+#
+# .externalNativeBuild/ — generated when your project
+#                          uses C/C++ code via Android NDK
+#                          Your current project does not
+#                          use native code but this rule
+#                          is here as a safety net in case
+#                          you add native code later
+#
+# .cxx/ — CMake build folder for C/C++ native code
+#          Same as above — safety net for future use
+#
+# Why ignore these?
+# Auto generated during native builds
+# Machine specific and regenerated automatically
+# -----------------------------------------------
+.externalNativeBuild/
+.cxx/
+
+# -----------------------------------------------
+# Android Studio Captures
+#
+# captures/ — Android Studio saves screenshots and
+#              screen recordings here when you use
+#              the Screen Capture tool during debugging
+#              Personal debugging files with no value
+#              to other developers or to GitHub Actions
+#
+# Why ignore this?
+# Personal debugging screenshots and recordings
+# Can be large files — especially screen recordings
+# No relevance to the project source code
+# -----------------------------------------------
+captures/
+
+# -----------------------------------------------
+# Navigation Editor Temp Files
+#
+# .navigation/ — Android Studio Navigation editor
+#                 creates temporary files here when
+#                 you use the visual navigation graph
+#                 editor to design your app navigation
+#                 These are regenerated automatically
+#                 every time you open the editor
+#
+# Why ignore this?
+# Auto generated temporary files that change
+# constantly — no reason to push them
+# -----------------------------------------------
+.navigation/
+
+# -----------------------------------------------
+# Log Files
+#
+# *.log — any file ending with .log
+#          Generated during app runtime and during
+#          Gradle build processes
+#          example: debug.log, build.log, error.log
+#          Change constantly during development
+#          Specific to your current session only
+#
+# Why ignore these?
+# Change on every run — not part of source code
+# Can become very large over time
+# Specific to your machine and session
+# -----------------------------------------------
+*.log
+
+# -----------------------------------------------
+# macOS System Files
+#
+# .DS_Store — macOS creates this hidden file in
+#              every folder you open in Finder
+#              Stores display preferences for folders
+#              Completely invisible to you but Git
+#              can see it and will try to track it
+#              Meaningless on Windows or Linux
+#
+# Why ignore this?
+# Auto generated by macOS in every folder
+# Changes constantly just from opening Finder
+# Has zero relevance to your Android project
+# -----------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# -----------------------------------------------
+# Windows System Files
+#
+# Thumbs.db  — Windows thumbnail cache file
+#               auto generated in folders with images
+# ehthumbs.db — Windows Media Center thumbnail cache
+# Desktop.ini — Windows folder customization file
+#
+# Why ignore these?
+# Windows specific system files — auto generated
+# No relevance to Android project or other OS
+# -----------------------------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
