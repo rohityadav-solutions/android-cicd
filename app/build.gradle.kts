@@ -19,6 +19,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (System.getenv("KEYSTORE_BASE64") != null) {
+            create("release") {
+                storeFile     = file(System.getenv("KEYSTORE_BASE64")!!)
+                storePassword = System.getenv("KEYSTORE_STORE_PASSWORD")
+                keyAlias      = System.getenv("KEYSTORE_KEY_ALIAS")
+                keyPassword   = System.getenv("KEYSTORE_KEY_PASSWORD")
+            }
+        } else {
+            create("release") {
+                // Signing with debug keys for local development
+                // Release signing is handled automatically by GitHub Actions CI/CD
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
