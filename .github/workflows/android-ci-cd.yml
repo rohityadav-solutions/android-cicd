@@ -52,6 +52,7 @@ jobs:
           track: internal
           status: completed
           changesNotSentForReview: true
+          whatsNewDirectory: distribution/whatsnew
 
       - name: Clean up Sensitive Files
         if: always()
