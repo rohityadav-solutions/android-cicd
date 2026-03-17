@@ -130,6 +130,12 @@ jobs:
           echo "================================================"
           echo "BUILDING RELEASE AAB"
           echo "================================================"
+          echo "KEYSTORE_BASE64 path: $KEYSTORE_BASE64"
+          echo "KEYSTORE_KEY_ALIAS: $KEYSTORE_KEY_ALIAS"
+          echo "KEYSTORE_STORE_PASSWORD present: $([ -n "$KEYSTORE_STORE_PASSWORD" ] && echo YES || echo NO)"
+          echo "KEYSTORE_KEY_PASSWORD present: $([ -n "$KEYSTORE_KEY_PASSWORD" ] && echo YES || echo NO)"
+          echo "Keystore file exists: $([ -f "$KEYSTORE_BASE64" ] && echo YES || echo NO)"
+          echo "================================================"
           ./gradlew bundleRelease
         env:
           KEYSTORE_BASE64: ${{ github.workspace }}/upkeep_keystore.jks

@@ -20,23 +20,24 @@ android {
     }
 
     signingConfigs {
-        if (System.getenv("KEYSTORE_BASE64") != null) {
-            create("release") {
-                storeFile     = file(System.getenv("KEYSTORE_BASE64")!!)
-                storePassword = System.getenv("KEYSTORE_STORE_PASSWORD")
-                keyAlias      = System.getenv("KEYSTORE_KEY_ALIAS")
-                keyPassword   = System.getenv("KEYSTORE_KEY_PASSWORD")
-            }
-        } else {
-            create("release") {
-                // Signing with debug keys for local development
-                // Release signing is handled automatically by GitHub Actions CI/CD
+        create("release") {
+            val keystorePath = System.getenv("KEYSTORE_BASE64")
+            val storePass = System.getenv("KEYSTORE_STORE_PASSWORD")
+            val keyAlias = System.getenv("KEYSTORE_KEY_ALIAS")
+            val keyPass = System.getenv("KEYSTORE_KEY_PASSWORD")
+
+            if (keystorePath != null && storePass != null && keyAlias != null && keyPass != null) {
+                storeFile = file(keystorePath)
+                storePassword = storePass
+                this.keyAlias = keyAlias
+                keyPassword = keyPass
             }
         }
     }
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -44,6 +45,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
