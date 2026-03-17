@@ -39,6 +39,20 @@ jobs:
           KEYSTORE_KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
           KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
 
+      # -----------------------------------------------
+      # Extract version name and version code from
+      # build.gradle.kts automatically
+      # -----------------------------------------------
+      - name: Get App Version
+        id: version
+        run: |
+          VERSION_NAME=$(grep -oP '(?<=versionName = ").*(?=")' app/build.gradle.kts)
+          VERSION_CODE=$(grep -oP '(?<=versionCode = )\d+' app/build.gradle.kts)
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "✅ Version Name: $VERSION_NAME"
+          echo "✅ Version Code: $VERSION_CODE"
+
       - name: Create Service Account JSON File
         run: |
           echo '${{ secrets.SERVICE_ACCOUNT_JSON }}' > service_account.json
@@ -62,92 +76,106 @@ jobs:
 
       - name: Notify Slack on Success
         if: success()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
-          -H 'Content-type: application/json' \
-          --data '{
-            "text": "✅ *Android CI/CD — Success*",
-            "attachments": [
-              {
-                "color": "good",
-                "fields": [
-                  {
-                    "title": "App",
-                    "value": "UpKeep — com.arbutusinfotech.upkeep",
-                    "short": true
-                  },
-                  {
-                    "title": "Track",
-                    "value": "Internal Testing",
-                    "short": true
-                  },
-                  {
-                    "title": "Branch",
-                    "value": "${{ github.ref_name }}",
-                    "short": true
-                  },
-                  {
-                    "title": "Triggered by",
-                    "value": "${{ github.actor }}",
-                    "short": true
-                  },
-                  {
-                    "title": "Commit",
-                    "value": "${{ github.event.head_commit.message }}",
-                    "short": false
-                  },
-                  {
-                    "title": "Workflow",
-                    "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                    "short": false
-                  }
-                ]
-              }
-            ]
-          }'
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H "Content-type: application/json" \
+            -d '{
+              "text": "✅ *Android CI/CD — Success*",
+              "attachments": [
+                {
+                  "color": "good",
+                  "fields": [
+                    {
+                      "title": "App",
+                      "value": "UpKeep — com.arbutusinfotech.upkeep",
+                      "short": true
+                    },
+                    {
+                      "title": "Version",
+                      "value": "${{ steps.version.outputs.VERSION_NAME }} (${{ steps.version.outputs.VERSION_CODE }})",
+                      "short": true
+                    },
+                    {
+                      "title": "Track",
+                      "value": "Internal Testing",
+                      "short": true
+                    },
+                    {
+                      "title": "Branch",
+                      "value": "${{ github.ref_name }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Triggered by",
+                      "value": "${{ github.actor }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Commit",
+                      "value": "${{ github.event.head_commit.message }}",
+                      "short": false
+                    },
+                    {
+                      "title": "Workflow",
+                      "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                      "short": false
+                    }
+                  ]
+                }
+              ]
+            }'
 
       - name: Notify Slack on Failure
         if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
-          -H 'Content-type: application/json' \
-          --data '{
-            "text": "❌ *Android CI/CD — Failed*",
-            "attachments": [
-              {
-                "color": "danger",
-                "fields": [
-                  {
-                    "title": "App",
-                    "value": "UpKeep — com.arbutusinfotech.upkeep",
-                    "short": true
-                  },
-                  {
-                    "title": "Track",
-                    "value": "Internal Testing",
-                    "short": true
-                  },
-                  {
-                    "title": "Branch",
-                    "value": "${{ github.ref_name }}",
-                    "short": true
-                  },
-                  {
-                    "title": "Triggered by",
-                    "value": "${{ github.actor }}",
-                    "short": true
-                  },
-                  {
-                    "title": "Commit",
-                    "value": "${{ github.event.head_commit.message }}",
-                    "short": false
-                  },
-                  {
-                    "title": "Workflow",
-                    "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                    "short": false
-                  }
-                ]
-              }
-            ]
-          }'
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H "Content-type: application/json" \
+            -d '{
+              "text": "❌ *Android CI/CD — Failed*",
+              "attachments": [
+                {
+                  "color": "danger",
+                  "fields": [
+                    {
+                      "title": "App",
+                      "value": "UpKeep — com.arbutusinfotech.upkeep",
+                      "short": true
+                    },
+                    {
+                      "title": "Version",
+                      "value": "${{ steps.version.outputs.VERSION_NAME }} (${{ steps.version.outputs.VERSION_CODE }})",
+                      "short": true
+                    },
+                    {
+                      "title": "Track",
+                      "value": "Internal Testing",
+                      "short": true
+                    },
+                    {
+                      "title": "Branch",
+                      "value": "${{ github.ref_name }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Triggered by",
+                      "value": "${{ github.actor }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Commit",
+                      "value": "${{ github.event.head_commit.message }}",
+                      "short": false
+                    },
+                    {
+                      "title": "Workflow",
+                      "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                      "short": false
+                    }
+                  ]
+                }
+              ]
+            }'

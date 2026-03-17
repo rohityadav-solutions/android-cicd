@@ -13,8 +13,8 @@ android {
         applicationId = "com.arbutusinfotech.upkeep"
         minSdk = 24
         targetSdk = 36
-        versionCode = 47
-        versionName = "4.7"
+        versionCode = 48
+        versionName = "4.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
