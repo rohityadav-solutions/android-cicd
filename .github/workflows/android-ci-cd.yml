@@ -243,7 +243,7 @@ jobs:
           packageName: com.arbutusinfotech.upkeep
           releaseFiles: app/build/outputs/bundle/release/app-release.aab
           track: internal
-          status: draft
+          status: completed
           changesNotSentForReview: true
 
       # -----------------------------------------------
