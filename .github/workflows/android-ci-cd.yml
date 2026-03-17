@@ -27,150 +27,21 @@ jobs:
       - name: Grant Execute Permission to Gradlew
         run: chmod +x gradlew
 
-      - name: Verify Secrets Are Present
-        run: |
-          echo "================================================"
-          echo "VERIFYING SECRETS"
-          echo "================================================"
-          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            echo "❌ KEYSTORE_BASE64 — MISSING"
-          else
-            echo "✅ KEYSTORE_BASE64 — PRESENT"
-          fi
-          if [ -z "${{ secrets.KEYSTORE_STORE_PASSWORD }}" ]; then
-            echo "❌ KEYSTORE_STORE_PASSWORD — MISSING"
-          else
-            echo "✅ KEYSTORE_STORE_PASSWORD — PRESENT"
-          fi
-          if [ -z "${{ secrets.KEYSTORE_KEY_ALIAS }}" ]; then
-            echo "❌ KEYSTORE_KEY_ALIAS — MISSING"
-          else
-            echo "✅ KEYSTORE_KEY_ALIAS — PRESENT"
-          fi
-          if [ -z "${{ secrets.KEYSTORE_KEY_PASSWORD }}" ]; then
-            echo "❌ KEYSTORE_KEY_PASSWORD — MISSING"
-          else
-            echo "✅ KEYSTORE_KEY_PASSWORD — PRESENT"
-          fi
-          if [ -z "${{ secrets.SERVICE_ACCOUNT_JSON }}" ]; then
-            echo "❌ SERVICE_ACCOUNT_JSON — MISSING"
-          else
-            echo "✅ SERVICE_ACCOUNT_JSON — PRESENT"
-          fi
-          echo "================================================"
-
       - name: Decode Keystore
         run: |
-          echo "================================================"
-          echo "DECODING KEYSTORE"
-          echo "================================================"
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > $GITHUB_WORKSPACE/upkeep_keystore.jks
-          if [ -f "$GITHUB_WORKSPACE/upkeep_keystore.jks" ]; then
-            echo "✅ Keystore file created successfully"
-            echo "📁 Keystore path: $GITHUB_WORKSPACE/upkeep_keystore.jks"
-            echo "📦 Keystore file size: $(wc -c < $GITHUB_WORKSPACE/upkeep_keystore.jks) bytes"
-          else
-            echo "❌ Keystore file was NOT created"
-            exit 1
-          fi
-          echo "================================================"
-
-      - name: Verify Keystore File
-        run: |
-          echo "================================================"
-          echo "VERIFYING KEYSTORE FILE"
-          echo "================================================"
-          FILE_SIZE=$(wc -c < $GITHUB_WORKSPACE/upkeep_keystore.jks)
-          if [ "$FILE_SIZE" -lt 100 ]; then
-            echo "❌ Keystore file is too small ($FILE_SIZE bytes)"
-            exit 1
-          else
-            echo "✅ Keystore file size looks correct: $FILE_SIZE bytes"
-          fi
-          FILE_TYPE=$(file $GITHUB_WORKSPACE/upkeep_keystore.jks)
-          echo "📋 File type: $FILE_TYPE"
-          echo "================================================"
 
       - name: Build Release AAB
-        run: |
-          echo "================================================"
-          echo "BUILDING RELEASE AAB"
-          echo "================================================"
-          echo "KEYSTORE_BASE64 path: $KEYSTORE_BASE64"
-          echo "KEYSTORE_KEY_ALIAS: $KEYSTORE_KEY_ALIAS"
-          echo "KEYSTORE_STORE_PASSWORD present: $([ -n "$KEYSTORE_STORE_PASSWORD" ] && echo YES || echo NO)"
-          echo "KEYSTORE_KEY_PASSWORD present: $([ -n "$KEYSTORE_KEY_PASSWORD" ] && echo YES || echo NO)"
-          echo "Keystore file exists: $([ -f "$KEYSTORE_BASE64" ] && echo YES || echo NO)"
-          echo "================================================"
-          ./gradlew bundleRelease
+        run: ./gradlew bundleRelease
         env:
           KEYSTORE_BASE64: ${{ github.workspace }}/upkeep_keystore.jks
           KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
           KEYSTORE_KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
           KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
 
-      - name: Verify AAB File
-        run: |
-          echo "================================================"
-          echo "VERIFYING AAB FILE"
-          echo "================================================"
-          AAB_PATH="app/build/outputs/bundle/release/app-release.aab"
-          if [ -f "$AAB_PATH" ]; then
-            echo "✅ AAB file exists at: $AAB_PATH"
-            echo "📦 AAB file size: $(wc -c < $AAB_PATH) bytes"
-          else
-            echo "❌ AAB file NOT found at: $AAB_PATH"
-            find app/build/outputs -type f 2>/dev/null || echo "No build outputs found"
-            exit 1
-          fi
-          echo "================================================"
-
       - name: Create Service Account JSON File
         run: |
-          echo "================================================"
-          echo "CREATING SERVICE ACCOUNT JSON FILE"
-          echo "================================================"
           echo '${{ secrets.SERVICE_ACCOUNT_JSON }}' > service_account.json
-          if [ -f "service_account.json" ]; then
-            echo "✅ service_account.json file created"
-            FILE_SIZE=$(wc -c < service_account.json)
-            echo "📦 File size: $FILE_SIZE bytes"
-            if [ "$FILE_SIZE" -lt 10 ]; then
-              echo "❌ service_account.json is empty"
-              exit 1
-            else
-              echo "✅ File size looks correct"
-            fi
-          else
-            echo "❌ service_account.json file was NOT created"
-            exit 1
-          fi
-          if python3 -c "import json; json.load(open('service_account.json'))" 2>/dev/null; then
-            echo "✅ service_account.json is valid JSON"
-          else
-            echo "❌ service_account.json is NOT valid JSON"
-            exit 1
-          fi
-          if python3 -c "
-          import json
-          data = json.load(open('service_account.json'))
-          required = ['type', 'project_id', 'private_key_id', 'private_key', 'client_email']
-          missing = [f for f in required if f not in data]
-          if missing:
-              print('❌ Missing fields: ' + str(missing))
-              exit(1)
-          else:
-              print('✅ All required JSON fields present')
-              print('✅ type: ' + data['type'])
-              print('✅ project_id: ' + data['project_id'])
-              print('✅ client_email: ' + data['client_email'])
-          "; then
-            echo "✅ Service account JSON verified successfully"
-          else
-            echo "❌ Service account JSON is missing required fields"
-            exit 1
-          fi
-          echo "================================================"
 
       - name: Upload to Google Play Console
         uses: r0adkll/upload-google-play@v1.1.3
@@ -179,20 +50,11 @@ jobs:
           packageName: com.arbutusinfotech.upkeep
           releaseFiles: app/build/outputs/bundle/release/app-release.aab
           track: internal
+          status: completed
           changesNotSentForReview: true
 
       - name: Clean up Sensitive Files
         if: always()
         run: |
-          echo "================================================"
-          echo "CLEANING UP SENSITIVE FILES"
-          echo "================================================"
           rm -f $GITHUB_WORKSPACE/upkeep_keystore.jks
           rm -f service_account.json
-          if [ ! -f "$GITHUB_WORKSPACE/upkeep_keystore.jks" ]; then
-            echo "✅ Keystore file deleted"
-          fi
-          if [ ! -f "service_account.json" ]; then
-            echo "✅ Service account JSON file deleted"
-          fi
-          echo "================================================"
