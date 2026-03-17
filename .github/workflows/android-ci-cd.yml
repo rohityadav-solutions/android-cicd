@@ -59,3 +59,95 @@ jobs:
         run: |
           rm -f $GITHUB_WORKSPACE/upkeep_keystore.jks
           rm -f service_account.json
+
+      - name: Notify Slack on Success
+        if: success()
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+          -H 'Content-type: application/json' \
+          --data '{
+            "text": "✅ *Android CI/CD — Success*",
+            "attachments": [
+              {
+                "color": "good",
+                "fields": [
+                  {
+                    "title": "App",
+                    "value": "UpKeep — com.arbutusinfotech.upkeep",
+                    "short": true
+                  },
+                  {
+                    "title": "Track",
+                    "value": "Internal Testing",
+                    "short": true
+                  },
+                  {
+                    "title": "Branch",
+                    "value": "${{ github.ref_name }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Triggered by",
+                    "value": "${{ github.actor }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Commit",
+                    "value": "${{ github.event.head_commit.message }}",
+                    "short": false
+                  },
+                  {
+                    "title": "Workflow",
+                    "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                    "short": false
+                  }
+                ]
+              }
+            ]
+          }'
+
+      - name: Notify Slack on Failure
+        if: failure()
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+          -H 'Content-type: application/json' \
+          --data '{
+            "text": "❌ *Android CI/CD — Failed*",
+            "attachments": [
+              {
+                "color": "danger",
+                "fields": [
+                  {
+                    "title": "App",
+                    "value": "UpKeep — com.arbutusinfotech.upkeep",
+                    "short": true
+                  },
+                  {
+                    "title": "Track",
+                    "value": "Internal Testing",
+                    "short": true
+                  },
+                  {
+                    "title": "Branch",
+                    "value": "${{ github.ref_name }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Triggered by",
+                    "value": "${{ github.actor }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Commit",
+                    "value": "${{ github.event.head_commit.message }}",
+                    "short": false
+                  },
+                  {
+                    "title": "Workflow",
+                    "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                    "short": false
+                  }
+                ]
+              }
+            ]
+          }'
